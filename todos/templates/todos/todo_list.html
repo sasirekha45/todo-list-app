@@ -1,0 +1,314 @@
+{% extends 'todos/base.html' %}
+
+{% block content %}
+<div class="space-y-8">
+
+    <!-- Hero / Stats Overview -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <!-- Total Tasks -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-3.5">
+            <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-list-check text-xl"></i>
+            </div>
+            <div>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Tasks</p>
+                <h3 class="text-2xl font-bold text-slate-800">{{ stats.total }}</h3>
+            </div>
+        </div>
+
+        <!-- Pending Tasks -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-3.5">
+            <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-clock text-xl"></i>
+            </div>
+            <div>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">In Progress</p>
+                <h3 class="text-2xl font-bold text-slate-800">{{ stats.pending }}</h3>
+            </div>
+        </div>
+
+        <!-- Completed Tasks -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-3.5">
+            <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-circle-check text-xl"></i>
+            </div>
+            <div>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Completed</p>
+                <h3 class="text-2xl font-bold text-slate-800">{{ stats.completed }}</h3>
+            </div>
+        </div>
+
+        <!-- Overdue Tasks -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-3.5">
+            <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+            </div>
+            <div>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Overdue</p>
+                <h3 class="text-2xl font-bold text-slate-800">{{ stats.overdue }}</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Add Task Card -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-200">
+        <form method="POST" action="{% url 'todo_list' %}" class="p-5">
+            {% csrf_token %}
+            <div class="flex flex-col sm:flex-row gap-3">
+                <div class="relative flex-1">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <i class="fa-solid fa-plus text-sm"></i>
+                    </span>
+                    <input type="text" name="title" required
+                        placeholder="Add a new task..." 
+                        class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-base">
+                </div>
+                <button type="submit" 
+                    class="inline-flex items-center justify-center px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-sm shadow-indigo-200 transition-all duration-150 transform active:scale-95 shrink-0">
+                    <i class="fa-solid fa-arrow-right mr-2 text-sm"></i> Add Task
+                </button>
+            </div>
+
+            <!-- Optional Extra Details Toggle -->
+            <div class="mt-3">
+                <button type="button" id="toggleMoreOptions" class="text-xs font-medium text-slate-500 hover:text-indigo-600 flex items-center space-x-1 focus:outline-none">
+                    <span id="moreOptionsText">Show more options (priority, due date, category)</span>
+                    <i id="moreOptionsIcon" class="fa-solid fa-chevron-down text-[10px] ml-1"></i>
+                </button>
+            </div>
+
+            <div id="moreOptionsSection" class="hidden mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Priority</label>
+                    <select name="priority" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <option value="low">Low Priority</option>
+                        <option value="medium" selected>Medium Priority</option>
+                        <option value="high">High Priority</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Category</label>
+                    <select name="category" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        {% for cat in categories %}
+                            <option value="{{ cat }}">{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Due Date</label>
+                    <input type="date" name="due_date" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+
+                <div class="sm:col-span-3">
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Description (optional)</label>
+                    <textarea name="description" rows="2" placeholder="Add additional details or notes..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Filter & Search Toolbar -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <!-- Search -->
+        <form method="GET" action="{% url 'todo_list' %}" class="relative flex-1 max-w-md">
+            {% if status_filter != 'all' %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
+            {% if category_filter != 'all' %}<input type="hidden" name="category" value="{{ category_filter }}">{% endif %}
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                <i class="fa-solid fa-magnifying-glass text-sm"></i>
+            </span>
+            <input type="text" name="q" value="{{ search_query }}" placeholder="Search tasks..." 
+                class="w-full pl-9 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm">
+            {% if search_query %}
+                <a href="?status={{ status_filter }}&category={{ category_filter }}" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </a>
+            {% endif %}
+        </form>
+
+        <!-- Status Filter Tabs -->
+        <div class="flex items-center space-x-1 bg-white p-1 rounded-xl border border-slate-200 shadow-sm text-xs font-semibold">
+            <a href="?status=all{% if search_query %}&q={{ search_query }}{% endif %}{% if category_filter != 'all' %}&category={{ category_filter }}{% endif %}" 
+               class="px-3.5 py-1.5 rounded-lg transition-all {% if status_filter == 'all' %}bg-indigo-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}">
+                All ({{ stats.total }})
+            </a>
+            <a href="?status=pending{% if search_query %}&q={{ search_query }}{% endif %}{% if category_filter != 'all' %}&category={{ category_filter }}{% endif %}" 
+               class="px-3.5 py-1.5 rounded-lg transition-all {% if status_filter == 'pending' %}bg-indigo-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}">
+                Active ({{ stats.pending }})
+            </a>
+            <a href="?status=completed{% if search_query %}&q={{ search_query }}{% endif %}{% if category_filter != 'all' %}&category={{ category_filter }}{% endif %}" 
+               class="px-3.5 py-1.5 rounded-lg transition-all {% if status_filter == 'completed' %}bg-indigo-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}">
+                Completed ({{ stats.completed }})
+            </a>
+        </div>
+    </div>
+
+    <!-- Category Pills & Clear Completed -->
+    <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+        <div class="flex flex-wrap items-center gap-1.5">
+            <span class="text-xs font-semibold text-slate-400 mr-1 uppercase tracking-wider">Filter:</span>
+            <a href="?status={{ status_filter }}{% if search_query %}&q={{ search_query }}{% endif %}&category=all" 
+               class="px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors 
+               {% if category_filter == 'all' %}bg-slate-800 text-white border-slate-800{% else %}bg-white text-slate-600 border-slate-200 hover:bg-slate-100{% endif %}">
+                All Categories
+            </a>
+            {% for cat in categories %}
+                <a href="?status={{ status_filter }}{% if search_query %}&q={{ search_query }}{% endif %}&category={{ cat }}" 
+                   class="px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors 
+                   {% if category_filter == cat %}bg-indigo-600 text-white border-indigo-600{% else %}bg-white text-slate-600 border-slate-200 hover:bg-slate-100{% endif %}">
+                    {{ cat }}
+                </a>
+            {% endfor %}
+        </div>
+
+        {% if stats.completed > 0 %}
+            <form method="POST" action="{% url 'todo_clear_completed' %}" onsubmit="return confirm('Clear all completed tasks?');">
+                {% csrf_token %}
+                <button type="submit" class="text-xs font-semibold text-rose-500 hover:text-rose-700 hover:underline flex items-center space-x-1">
+                    <i class="fa-regular fa-trash-can mr-1"></i> Clear completed
+                </button>
+            </form>
+        {% endif %}
+    </div>
+
+    <!-- Task List -->
+    <div class="space-y-3">
+        {% if todos %}
+            {% for todo in todos %}
+                <div class="group bg-white rounded-2xl border transition-all duration-200 p-4 sm:p-5 shadow-sm hover:shadow-md flex items-start justify-between gap-4 
+                    {% if todo.completed %} border-slate-200 bg-slate-50/70 {% elif todo.is_overdue %} border-rose-200 bg-rose-50/20 {% else %} border-slate-200 {% endif %}">
+                    
+                    <!-- Left: Checkbox & Info -->
+                    <div class="flex items-start space-x-3.5 flex-1 min-w-0">
+                        <a href="{% url 'todo_toggle' todo.id %}" class="mt-0.5 text-xl transition-transform active:scale-75 shrink-0">
+                            {% if todo.completed %}
+                                <i class="fa-solid fa-circle-check text-emerald-500"></i>
+                            {% else %}
+                                <i class="fa-regular fa-circle text-slate-300 hover:text-indigo-500"></i>
+                            {% endif %}
+                        </a>
+
+                        <div class="flex-1 min-w-0">
+                            <!-- Title -->
+                            <div class="flex items-center flex-wrap gap-2">
+                                <h4 class="text-base font-semibold text-slate-800 break-words {% if todo.completed %}line-through text-slate-400{% endif %}">
+                                    {{ todo.title }}
+                                </h4>
+                            </div>
+
+                            <!-- Description if present -->
+                            {% if todo.description %}
+                                <p class="text-sm mt-1 text-slate-500 {% if todo.completed %}line-through text-slate-300{% endif %} leading-relaxed">
+                                    {{ todo.description }}
+                                </p>
+                            {% endif %}
+
+                            <!-- Badges / Metadata -->
+                            <div class="flex flex-wrap items-center gap-2 mt-2.5 text-xs font-medium">
+                                <!-- Priority Badge -->
+                                {% if todo.priority == 'high' %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-100">
+                                        <i class="fa-solid fa-angles-up mr-1 text-[10px]"></i> High Priority
+                                    </span>
+                                {% elif todo.priority == 'medium' %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-100">
+                                        <i class="fa-solid fa-minus mr-1 text-[10px]"></i> Medium
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 border border-sky-100">
+                                        <i class="fa-solid fa-angles-down mr-1 text-[10px]"></i> Low
+                                    </span>
+                                {% endif %}
+
+                                <!-- Category Badge -->
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
+                                    <i class="fa-solid fa-tag mr-1 text-[10px] text-slate-400"></i> {{ todo.category }}
+                                </span>
+
+                                <!-- Due Date Badge -->
+                                {% if todo.due_date %}
+                                    {% if todo.is_overdue %}
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 font-semibold border border-rose-200">
+                                            <i class="fa-solid fa-fire mr-1 text-[10px]"></i> Overdue: {{ todo.due_date|date:"M d, Y" }}
+                                        </span>
+                                    {% elif todo.is_due_today %}
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-semibold border border-amber-200">
+                                            <i class="fa-solid fa-bell mr-1 text-[10px]"></i> Due Today
+                                        </span>
+                                    {% else %}
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">
+                                            <i class="fa-regular fa-calendar mr-1 text-[10px]"></i> {{ todo.due_date|date:"M d, Y" }}
+                                        </span>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Actions -->
+                    <div class="flex items-center space-x-1 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
+                        <a href="{% url 'todo_edit' todo.id %}" 
+                           title="Edit Task"
+                           class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition">
+                            <i class="fa-regular fa-pen-to-square text-base"></i>
+                        </a>
+                        <a href="{% url 'todo_delete' todo.id %}" 
+                           onclick="return confirm('Are you sure you want to delete this task?');"
+                           title="Delete Task"
+                           class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition">
+                            <i class="fa-regular fa-trash-can text-base"></i>
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <!-- Empty State -->
+            <div class="bg-white rounded-2xl border border-dashed border-slate-300 p-12 text-center shadow-sm">
+                <div class="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-500 mx-auto flex items-center justify-center text-2xl mb-4">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800 mb-1">No tasks found</h3>
+                <p class="text-sm text-slate-500 max-w-sm mx-auto mb-6">
+                    {% if search_query or status_filter != 'all' or category_filter != 'all' %}
+                        No tasks match your current filter criteria. Try resetting your filters.
+                    {% else %}
+                        Your to-do list is completely clean! Add your first task using the box above to get organized.
+                    {% endif %}
+                </p>
+                {% if search_query or status_filter != 'all' or category_filter != 'all' %}
+                    <a href="{% url 'todo_list' %}" class="inline-flex items-center px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-semibold rounded-xl text-xs transition">
+                        <i class="fa-solid fa-rotate-left mr-1.5"></i> Clear all filters
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Expand / collapse additional options for task creation
+    const toggleBtn = document.getElementById('toggleMoreOptions');
+    const optionsSection = document.getElementById('moreOptionsSection');
+    const moreOptionsText = document.getElementById('moreOptionsText');
+    const moreOptionsIcon = document.getElementById('moreOptionsIcon');
+
+    if (toggleBtn && optionsSection) {
+        toggleBtn.addEventListener('click', () => {
+            const isHidden = optionsSection.classList.contains('hidden');
+            if (isHidden) {
+                optionsSection.classList.remove('hidden');
+                moreOptionsText.innerText = 'Hide additional options';
+                moreOptionsIcon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+            } else {
+                optionsSection.classList.add('hidden');
+                moreOptionsText.innerText = 'Show more options (priority, due date, category)';
+                moreOptionsIcon.classList.replace('fa-chevron-up', 'fa-chevron-down');
+            }
+        });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Todo list{% endblock %}</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            200: '#c7d2fe',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col text-slate-800 antialiased selection:bg-indigo-500 selection:text-white">
+
+    <!-- Top Navigation Bar -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <!-- Brand -->
+            <a href="{% url 'todo_list' %}" class="flex items-center space-x-3 group">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-md shadow-indigo-100 group-hover:scale-105 transition-transform duration-200">
+                    <i class="fa-solid fa-check-double text-lg"></i>
+                </div>
+                <div>
+                    <span class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-violet-600">TaskFlow</span>
+                    <span class="hidden sm:inline-block ml-1.5 px-2 py-0.5 text-xs font-semibold text-indigo-700 bg-indigo-50 rounded-full border border-indigo-100">Pro</span>
+                </div>
+            </a>
+
+            <!-- Right side info & actions -->
+            <div class="flex items-center space-x-4">
+                <div class="hidden md:flex items-center text-sm font-medium text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
+                    <i class="fa-regular fa-calendar-days mr-2 text-indigo-500"></i>
+                    <span id="currentDate">Today</span>
+                </div>
+                <a href="/admin/" target="_blank" title="Django Admin" class="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition">
+                    <i class="fa-solid fa-shield-halved text-base"></i>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Notification Messages -->
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 w-full">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="flex items-center justify-between p-4 mb-3 rounded-xl border text-sm font-medium transition-all duration-300 shadow-sm
+                    {% if message.tags == 'success' %} bg-emerald-50 text-emerald-800 border-emerald-200
+                    {% elif message.tags == 'warning' %} bg-amber-50 text-amber-800 border-amber-200
+                    {% elif message.tags == 'error' %} bg-rose-50 text-rose-800 border-rose-200
+                    {% else %} bg-indigo-50 text-indigo-800 border-indigo-200 {% endif %}"
+                    role="alert">
+                    <div class="flex items-center space-x-3">
+                        {% if message.tags == 'success' %}
+                            <i class="fa-solid fa-circle-check text-emerald-500 text-base"></i>
+                        {% elif message.tags == 'warning' %}
+                            <i class="fa-solid fa-triangle-exclamation text-amber-500 text-base"></i>
+                        {% elif message.tags == 'error' %}
+                            <i class="fa-solid fa-circle-xmark text-rose-500 text-base"></i>
+                        {% else %}
+                            <i class="fa-solid fa-circle-info text-indigo-500 text-base"></i>
+                        {% endif %}
+                        <span>{{ message }}</span>
+                    </div>
+                    <button type="button" onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-auto border-t border-slate-200 bg-white py-6">
+        <div class="max-w-5xl mx-auto px-4 text-center text-xs text-slate-400 flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0">
+            <span>Powered by Django &bull; Ready for <code class="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-indigo-600">python manage.py runserver</code></span>
+            <span>TaskFlow Todo App &copy; {% now "Y" %}</span>
+        </div>
+    </footer>
+
+    <script>
+        // Set dynamic date in header
+        const options = { weekday: 'short', month: 'short', day: 'numeric' };
+        const dateElement = document.getElementById('currentDate');
+        if (dateElement) {
+            dateElement.innerText = new Date().toLocaleDateString('en-US', options);
+        }
+
+        // Auto dismiss alert notifications after 4 seconds
+        setTimeout(() => {
+            const alerts = document.querySelectorAll('[role="alert"]');
+            alerts.forEach(alert => {
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 300);
+            });
+        }, 4000);
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>
